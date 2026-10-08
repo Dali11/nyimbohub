@@ -58,7 +58,7 @@ export default function PlayerBar() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-16 z-40 border-t border-line bg-surface/95 shadow-[0_-10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl md:bottom-0">
+    <div className="fixed inset-x-0 bottom-16 z-[60] border-t border-line bg-surface/95 shadow-[0_-10px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl md:bottom-0">
       <div className="mx-auto max-w-7xl px-3 sm:px-6">
 
         {/* Desktop player */}
