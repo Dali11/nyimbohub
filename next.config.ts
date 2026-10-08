@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  env: {
+    NEON_AUTH_URL: process.env.NEON_AUTH_URL,
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
