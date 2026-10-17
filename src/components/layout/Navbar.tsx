@@ -3,16 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Music2, Search, Menu, X, Video } from "lucide-react";
+import { User, LogOut, Menu, X, Video } from "lucide-react";
+import { Music2, Search } from "lucide-react";
 import { browse, library, type NavItemData } from "./nav-items";
-
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/music", label: "Music" },
-  { href: "/videos", label: "Videos" },
-  { href: "/artists", label: "Artists" },
-  { href: "/playlists", label: "Playlists" },
-];
+import { auth } from "@/lib/auth";
 
 // Mobile menu = the sidebar links plus Videos (which the sidebar doesn't list)
 const mobileBrowse: NavItemData[] = [
@@ -24,6 +18,8 @@ const mobileBrowse: NavItemData[] = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session } = auth.useSession();
+  const user = session?.user;
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -52,7 +48,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="ml-4 hidden items-center gap-6 md:flex">
-          {links.map((l) => (
+          {browse.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -77,19 +73,42 @@ export default function Navbar() {
         </div>
 
         <div className="ml-auto flex items-center gap-3 lg:ml-0">
-          <Link
-            href="/login"
-            className="hidden rounded-lg border border-line px-4 py-2 text-sm hover:bg-surface sm:block"
-          >
-            Login
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold hover:bg-brand-dark"
-          >
-            Sign Up
-          </Link>
-          {/* Visible below lg so tablets also get the sidebar links */}
+          {user ? (
+            <>
+              <div className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-muted">
+                <User className="size-4 text-brand" />
+                <span className="hidden text-sm sm:inline">
+                  {user.name ?? user.email ?? "User"}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  void auth.signOut();
+                }}
+                className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-muted hover:bg-surface"
+                aria-label="Sign out"
+              >
+                <LogOut className="size-4" />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden rounded-lg border border-line px-4 py-2 text-sm hover:bg-surface sm:block"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/sign-up"
+                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold hover:bg-brand-dark"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
+
           <button
             className="lg:hidden"
             aria-label={open ? "Close menu" : "Open menu"}
@@ -127,13 +146,34 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <Link
-            href="/login"
-            onClick={() => setOpen(false)}
-            className="mt-5 block rounded-lg border border-line px-3 py-3 text-center text-sm sm:hidden"
-          >
-            Login
-          </Link>
+          <div className="mt-5 flex gap-3 px-3 pb-3">
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-muted">
+                  <User className="size-4 text-brand" />
+                  <span className="hidden text-sm sm:inline">
+                    {user.name ?? user.email ?? "User"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    void auth.signOut();
+                  }}
+                  className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-muted hover:bg-surface"
+                >
+                  <LogOut className="size-4" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/sign-in"
+                className="block rounded-lg border border-line px-3 py-3 text-center text-sm sm:hidden"
+              >
+                Sign in
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </header>

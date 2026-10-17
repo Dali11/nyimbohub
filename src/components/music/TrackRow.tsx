@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Download, Heart, MoreHorizontal, Pause, Play } from "lucide-react";
-import type { Track } from "@/lib/mock-data";
+import type { Track } from "@/lib/types";
 import { usePlayer } from "@/components/player/PlayerProvider";
+import { auth } from "@/lib/auth";
 
 type TrackRowProps = {
   track: Track;
@@ -47,23 +48,30 @@ export default function TrackRow({
   queue,
 }: TrackRowProps) {
   const { current, isPlaying, play } = usePlayer();
+  const { data: session, isPending } = auth.useSession();
 
   const active = current?.id === track.id;
   const playing = active && isPlaying;
 
-  const handlePlay = () => {
-    play(track, queue);
+  const handleDownload = () => {
+    if (!isPending && !session?.user) {
+      // Task 4: signed-out users are gated at the API layer (401); surface the
+      // sign-in page instead of hitting that 401 directly.
+      window.location.href = "/sign-in";
+      return;
+    }
+    window.location.href = `/api/media/audio/${track.id}/download`;
   };
 
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={handlePlay}
+      onClick={() => play(track, queue)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          handlePlay();
+          play(track, queue);
         }
       }}
       className={`group grid min-h-[82px] cursor-pointer grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-3 px-3 transition-colors sm:grid-cols-[44px_minmax(0,1fr)_120px_80px_90px] sm:gap-4 sm:px-4 ${
@@ -75,7 +83,7 @@ export default function TrackRow({
         type="button"
         onClick={(event) => {
           event.stopPropagation();
-          handlePlay();
+          play(track, queue);
         }}
         aria-label={
           playing ? `Pause ${track.title}` : `Play ${track.title}`
@@ -156,7 +164,7 @@ export default function TrackRow({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            window.location.href = `/api/media/audio/${track.id}/download`;
+            handleDownload();
           }}
           aria-label={`Download ${track.title}`}
           className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-white/5 hover:text-white"
