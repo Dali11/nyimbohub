@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Music2 } from "lucide-react";
 import TrackRow from "@/components/music/TrackRow";
 import { getGenres, getTracksByGenre } from "@/db/queries";
 import MusicLayout from "../../music/layout";
@@ -48,11 +49,21 @@ export default async function GenrePage({ params }: Props) {
           {selected.count} tracks · ranked by plays
         </p>
         <div className="mt-4 border-b border-line" />
-        <div className="space-y-1">
-          {trackItems.map((track, index) => (
-            <TrackRow key={track.id} track={track} index={index} queue={trackItems} />
-          ))}
-        </div>
+        {trackItems.length === 0 ? (
+          <div className="rounded-2xl border border-line bg-surface px-6 py-16 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-surface-2">
+              <Music2 className="h-6 w-6 text-muted" />
+            </div>
+            <h3 className="text-lg font-semibold">No tracks in this genre</h3>
+            <p className="mt-2 text-sm text-muted">Try another genre or check back soon.</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {trackItems.map((track, index) => (
+              <TrackRow key={track.id} track={track} index={index} queue={trackItems} />
+            ))}
+          </div>
+        )}
       </div>
     </MusicLayout>
   );
