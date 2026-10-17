@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { Track } from "@/lib/mock-data";
+import type { Track } from "@/lib/types";
 
 type PlayerState = {
   current: Track | null;
@@ -179,17 +179,21 @@ export default function PlayerProvider({
             Number.isFinite(realDuration) &&
             realDuration > 0
           ) {
-            fetch(`/api/tracks/${current.id}/duration`, {
-              method: "PATCH",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                durationSec: realDuration,
-              }),
-            }).catch(() => {
-              // Duration persistence is non-critical to playback.
-            });
+            // `durationSec` is set-once (only written when it is currently 0),
+            // so only send the PATCH for a track that has no duration yet.
+            if (current.durationSec === 0) {
+              fetch(`/api/tracks/${current.id}/duration`, {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  durationSec: realDuration,
+                }),
+              }).catch(() => {
+                // Duration persistence is non-critical to playback.
+              });
+            }
           }
         }}
         onEnded={() => step(1)}

@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { updateTag } from "next/cache";
 import { db } from "@/db";
 import { tracks } from "@/db/schema";
 
@@ -10,7 +11,6 @@ export async function PATCH(
   const { id } = await params;
 
   let body: { durationSec?: number };
-
   try {
     body = await request.json();
   } catch {
@@ -34,7 +34,7 @@ export async function PATCH(
   }
 
   const [track] = await db
-    .select({ id: tracks.id })
+    .select({ id: tracks.id, durationSec: tracks.durationSec })
     .from(tracks)
     .where(eq(tracks.id, id))
     .limit(1);
@@ -46,10 +46,21 @@ export async function PATCH(
     );
   }
 
+  // Set-once: a track's duration can only be written when it is currently 0.
+  if (track.durationSec !== 0) {
+    return NextResponse.json({
+      success: true,
+      durationSec: track.durationSec,
+    });
+  }
+
   await db
     .update(tracks)
     .set({ durationSec })
     .where(eq(tracks.id, id));
+
+  // Invalidate the tracks cache so the new duration is visible next render.
+  updateTag("music:tracks");
 
   return NextResponse.json({
     success: true,
