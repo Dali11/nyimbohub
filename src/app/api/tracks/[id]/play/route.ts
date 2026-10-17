@@ -1,7 +1,7 @@
 import { sql, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { tracks } from "@/db/schema";
 
@@ -57,8 +57,9 @@ export async function POST(
     maxAge: PLAY_COOKIE_TTL,
   });
 
-  // Invalidate the tracks cache so the new play count is visible next render.
-  updateTag("music:tracks");
+  // Revalidate the tracks cache (stale-while-revalidate) so the new play count
+  // is visible on the next visit to a music list page.
+  revalidateTag("music:tracks", "max");
 
   return NextResponse.json({
     success: true,

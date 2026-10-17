@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { updateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { tracks } from "@/db/schema";
 
@@ -59,8 +59,9 @@ export async function PATCH(
     .set({ durationSec })
     .where(eq(tracks.id, id));
 
-  // Invalidate the tracks cache so the new duration is visible next render.
-  updateTag("music:tracks");
+  // Revalidate the tracks cache (stale-while-revalidate) so the new duration
+  // is visible on the next visit to a music list page.
+  revalidateTag("music:tracks", "max");
 
   return NextResponse.json({
     success: true,
