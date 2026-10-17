@@ -1,21 +1,43 @@
 import "server-only";
 
 import https from "node:https";
+import dns from "node:dns";
 
 const NEON_API_HOST = "api.c-6.eu-central-1.aws.neon.tech";
 
-/*
- * Node's native fetch is currently timing out when connecting to
- * Neon's API hostname in this environment.
- *
- * Keep the working IPv4 as the transport address while preserving
- * the Neon hostname for TLS/SNI and the Host header.
- */
+// Only enabled via the NEON_IPV4_WORKAROUND flag. Default is OFF, so in
+// production fetch connects directly to NEON_API_HOST with no hardcoded IPs.
+const NEON_IPV4_WORKAROUND = process.env.NEON_IPV4_WORKAROUND === "1";
+
 const NEON_API_IPS = [
   "52.28.178.228",
   "63.186.215.67",
   "3.126.61.52",
 ];
+
+// Short-lived cache for resolution results so we don't hit DNS on every
+// request, but the list is refreshed after the TTL.
+let cachedNeonIps: string[] | null = null;
+const IPV4_CACHE_TTL_MS = 60_000;
+
+async function resolveNeonIps(): Promise<string[]> {
+  if (cachedNeonIps) return cachedNeonIps;
+
+  try {
+    const ips = await dns.promises.resolve4(NEON_API_HOST);
+    if (ips.length > 0) {
+      cachedNeonIps = ips;
+      setTimeout(() => {
+        cachedNeonIps = null;
+      }, IPV4_CACHE_TTL_MS);
+      return ips;
+    }
+  } catch {
+    // DNS resolution failed; fall through to the static list below.
+  }
+
+  return NEON_API_IPS;
+}
 
 export async function neonFetch(
   input: RequestInfo | URL,
@@ -27,11 +49,17 @@ export async function neonFetch(
     return globalThis.fetch(input, init);
   }
 
-  const headers = new Headers(init?.headers);
+  if (!NEON_IPV4_WORKAROUND) {
+    // Default: production uses the normal fetch with no hardcoded IPs.
+    return globalThis.fetch(input, init);
+  }
 
+  const ips = await resolveNeonIps();
+
+  const headers = new Headers(init?.headers);
   let lastError: unknown;
 
-  for (const ip of NEON_API_IPS) {
+  for (const ip of ips) {
     try {
       return await requestNeon(ip, url, init, headers);
     } catch (error) {
@@ -41,7 +69,7 @@ export async function neonFetch(
 
   throw new Error(
     `Unable to connect to Neon API (${NEON_API_HOST}). ` +
-      `Tried ${NEON_API_IPS.length} IPv4 addresses.`,
+      `Tried ${ips.length} IPv4 addresses.`,
     { cause: lastError },
   );
 }
