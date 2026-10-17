@@ -3,6 +3,7 @@ import { Download, Heart, MoreHorizontal, Pause, Play } from "lucide-react";
 import type { Track } from "@/lib/types";
 import { usePlayer } from "@/components/player/PlayerProvider";
 import { auth } from "@/lib/auth";
+import Cover from "@/components/music/Cover";
 
 function slugify(value: string) {
   return value
@@ -101,13 +102,7 @@ export default function TrackRow({
 
       {/* Artwork + song */}
       <div className="flex min-w-0 items-center gap-3">
-        <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br shadow-lg ${track.gradient}`}
-        >
-          <span className="text-sm font-bold text-white/90">
-            {track.title.slice(0, 1).toUpperCase()}
-          </span>
-        </div>
+        <Cover track={track} variant="md" />
         <div className="min-w-0">
           <p
             className={`truncate text-sm font-semibold transition ${active ? "text-brand" : "text-white group-hover:text-brand"}`}

@@ -13,10 +13,10 @@ export default async function MusicPage() {
     durationSec: track.durationSec,
     plays: track.plays,
     gradient: track.gradient,
+    coverUrl: track.coverKey ? `/api/media/cover/${track.id}` : undefined,
     audioUrl: track.audioKey
       ? `/api/media/audio/${track.id}`
       : undefined,
-    createdAt: track.createdAt.getTime(),
   }));
 
   return <MusicBrowser tracks={tracks} />;

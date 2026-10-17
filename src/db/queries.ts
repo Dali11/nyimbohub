@@ -72,7 +72,7 @@ export async function getTrending() {
     })
     .from(tracks)
     .innerJoin(artists, eq(tracks.artistId, artists.id))
-    .orderBy(desc(tracks.plays));
+    .orderBy(desc(tracks.createdAt));
 }
 
 export async function getCharts() {

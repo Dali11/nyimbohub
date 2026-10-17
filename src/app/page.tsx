@@ -14,12 +14,13 @@ export default async function HomePage() {
     durationSec: track.durationSec,
     plays: track.plays,
     gradient: track.gradient,
+    coverUrl: track.coverKey ? `/api/media/cover/${track.id}` : undefined,
     audioUrl: track.audioKey ? `/api/media/audio/${track.id}` : undefined,
   })) as import("@/lib/types").Track[];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      <Hero />
+      <Hero tracks={tracks} />
       <QuickLinks />
       <TrendingNow tracks={tracks} />
     </div>

@@ -8,6 +8,7 @@ export type Track = {
   durationSec: number;
   plays: number;
   gradient: string;
+  coverUrl?: string;
   audioUrl?: string;
 };
 

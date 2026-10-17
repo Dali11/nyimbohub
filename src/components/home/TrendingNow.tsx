@@ -27,7 +27,13 @@ export default function TrendingNow({ tracks }: TrendingNowProps) {
         </Link>
       </div>
 
-      <div className="scrollbar-none flex gap-4 overflow-x-auto pb-2">
+      <div
+        className="scrollbar-none flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
+        style={{
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         {tracks.map((t) => {
           const active = current?.id === t.id && isPlaying;
           return (

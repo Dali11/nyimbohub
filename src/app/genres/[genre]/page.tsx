@@ -29,6 +29,7 @@ export default async function GenrePage({ params }: Props) {
     durationSec: t.durationSec,
     plays: t.plays,
     gradient: t.gradient,
+    coverUrl: t.coverKey ? `/api/media/cover/${t.id}` : undefined,
     audioUrl: t.audioKey ? `/api/media/audio/${t.id}` : undefined,
   })) as import("@/lib/types").Track[];
 

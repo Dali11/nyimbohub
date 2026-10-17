@@ -22,7 +22,7 @@ const mobileBrowse: NavItemData[] = [
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const { data: session, isPending } = auth.useSession();
+  const { data: session } = auth.useSession();
   const user = session?.user;
 
   const isActive = (href: string) =>
