@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Music, Video, Users, Library } from "lucide-react";
+import { House, Music, Video, Users, TrendingUp } from "lucide-react";
 
+// Main sections. "Library" had no data model, so it is replaced by Top Charts.
 const tabs = [
   { href: "/", label: "Home", icon: House },
   { href: "/music", label: "Music", icon: Music },
   { href: "/videos", label: "Videos", icon: Video },
   { href: "/artists", label: "Artists", icon: Users },
-  { href: "/library", label: "Library", icon: Library },
+  { href: "/charts", label: "Top Charts", icon: TrendingUp },
 ];
 
 export default function MobileTabBar() {
@@ -24,7 +25,8 @@ export default function MobileTabBar() {
             <li key={href}>
               <Link
                 href={href}
-                className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] ${
+                aria-current={active ? "page" : undefined}
+                className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded-[10px] ${
                   active ? "text-brand" : "text-muted"
                 }`}
               >
