@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
-import { artists } from "@/lib/mock-data";
+import { getArtists } from "@/db/queries";
 import { formatPlays } from "@/lib/format";
 
 export const metadata = { title: "Artists — NyimboHub" };
 
-export default function ArtistsPage() {
+export default async function ArtistsPage() {
+  const artists = await getArtists();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <h1 className="mb-6 text-3xl font-bold">Artists</h1>
@@ -33,7 +35,9 @@ export default function ArtistsPage() {
                 {a.verified && <BadgeCheck className="size-4 text-brand" />}
               </h2>
               <p className="text-xs text-muted">{a.location}</p>
-              <p className="mt-2 text-xs text-muted">{formatPlays(a.followers)} followers</p>
+              <p className="mt-2 text-xs text-muted">
+                {formatPlays(a.followers)} followers
+              </p>
             </Link>
           );
         })}

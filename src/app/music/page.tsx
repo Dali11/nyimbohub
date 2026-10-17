@@ -8,6 +8,7 @@ export default async function MusicPage() {
     id: track.id,
     title: track.title,
     artist: track.artist,
+    artistSlug: track.artistSlug,
     genre: track.genre,
     durationSec: track.durationSec,
     plays: track.plays,
@@ -15,6 +16,7 @@ export default async function MusicPage() {
     audioUrl: track.audioKey
       ? `/api/media/audio/${track.id}`
       : undefined,
+    createdAt: track.createdAt.getTime(),
   }));
 
   return <MusicBrowser tracks={tracks} />;

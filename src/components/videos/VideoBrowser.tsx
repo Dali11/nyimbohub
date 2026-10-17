@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { videos, type VideoTag } from "@/lib/mock-data";
+import type { Video, VideoTag } from "@/lib/types";
 import VideoCard from "./VideoCard";
 
 type Filter = "all" | VideoTag;
@@ -13,10 +13,10 @@ const chips: { key: Filter; label: string }[] = [
   { key: "featured", label: "Featured" },
 ];
 
-export default function VideoBrowser() {
+export default function VideoBrowser({ videos: videoList }: { videos: Video[] }) {
   const [filter, setFilter] = useState<Filter>("all");
 
-  const list = filter === "all" ? videos : videos.filter((v) => v.tags.includes(filter));
+  const list = filter === "all" ? videoList : videoList.filter((v) => v.tags.includes(filter));
   const [first, ...rest] = list;
 
   return (

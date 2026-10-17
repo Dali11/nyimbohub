@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BadgeCheck } from "lucide-react";
-import { getArtist, tracksByArtist, videosByArtist } from "@/lib/mock-data";
-import { formatPlays } from "@/lib/format";
+import {
+  getArtistBySlug,
+  getTracksByArtist,
+  getVideosByArtist,
+} from "@/db/queries";
+import type { Artist, Track, Video } from "@/lib/types";
+import { formatAgo, formatPlays, formatTime } from "@/lib/format";
 import ArtistActions from "@/components/artists/ArtistActions";
 import ArtistTabs from "@/components/artists/ArtistTabs";
 
@@ -10,23 +15,54 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const artist = getArtist(slug);
+  const artist = await getArtistBySlug(slug);
   return { title: artist ? `${artist.name} — NyimboHub` : "Artist not found" };
 }
 
 export default async function ArtistPage({ params }: Props) {
   const { slug } = await params;
-  const artist = getArtist(slug);
+  const artist = await getArtistBySlug(slug);
   if (!artist) notFound();
 
-  const songs = tracksByArtist(artist.name);
-  const vids = videosByArtist(artist.name);
+  const songs = (await getTracksByArtist(artist.id)).map((t) => ({
+    id: t.id,
+    title: t.title,
+    artist: artist.name,
+    artistSlug: artist.slug,
+    genre: t.genre,
+    durationSec: t.durationSec,
+    plays: t.plays,
+    gradient: t.gradient,
+    audioUrl: t.audioKey ? `/api/media/audio/${t.id}` : undefined,
+  })) as Track[];
+
+  const vids = (await getVideosByArtist(artist.id)).map((v) => ({
+    id: v.id,
+    title: v.title,
+    artist: artist.name,
+    views: v.views,
+    ago: formatAgo(v.createdAt),
+    duration: formatTime(v.durationSec),
+    gradient: v.gradient,
+    tags: v.tags,
+  })) as Video[];
+
   const totalPlays = songs.reduce((sum, t) => sum + t.plays, 0);
   const initials = artist.name
     .split(" ")
     .map((w) => w[0])
     .join("")
     .slice(0, 2);
+
+  const artistObj: Artist = {
+    slug: artist.slug,
+    name: artist.name,
+    location: artist.location,
+    verified: artist.verified,
+    followers: artist.followers,
+    bio: artist.bio,
+    gradient: artist.gradient,
+  };
 
   const stats = [
     { label: "Songs", value: String(songs.length) },
@@ -70,7 +106,7 @@ export default async function ArtistPage({ params }: Props) {
         </div>
 
         <div className="mt-8">
-          <ArtistTabs artist={artist} songs={songs} videos={vids} />
+          <ArtistTabs artist={artistObj} songs={songs} videos={vids} />
         </div>
       </div>
     </div>

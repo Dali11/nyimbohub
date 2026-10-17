@@ -1,5 +1,5 @@
 import { Play } from "lucide-react";
-import type { Video } from "@/lib/mock-data";
+import type { Video } from "@/lib/types";
 import { formatPlays } from "@/lib/format";
 
 export default function VideoCard({

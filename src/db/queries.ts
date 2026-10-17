@@ -1,8 +1,13 @@
+import { cacheLife, cacheTag } from "next/cache";
 import { desc, eq } from "drizzle-orm";
 import { db } from "./index";
 import { artists, tracks, videos } from "./schema";
 
 export async function getMusicTracks() {
+  "use cache";
+  cacheTag("music:tracks");
+  cacheLife("minutes");
+
   return db
     .select({
       id: tracks.id,
@@ -15,6 +20,7 @@ export async function getMusicTracks() {
       gradient: tracks.gradient,
       audioKey: tracks.audioKey,
       coverKey: tracks.coverKey,
+      createdAt: tracks.createdAt,
     })
     .from(tracks)
     .innerJoin(artists, eq(tracks.artistId, artists.id))

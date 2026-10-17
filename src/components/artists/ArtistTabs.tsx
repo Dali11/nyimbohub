@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Artist, Track, Video } from "@/lib/mock-data";
+import type { Artist, Track, Video } from "@/lib/types";
 import TrackRow from "@/components/music/TrackRow";
 import VideoCard from "@/components/videos/VideoCard";
 
