@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Download, Heart, MoreHorizontal, Pause, Play } from "lucide-react";
 import type { Track } from "@/lib/types";
