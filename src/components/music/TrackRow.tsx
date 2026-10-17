@@ -1,10 +1,16 @@
-"use client";
-
 import Link from "next/link";
 import { Download, Heart, MoreHorizontal, Pause, Play } from "lucide-react";
 import type { Track } from "@/lib/types";
 import { usePlayer } from "@/components/player/PlayerProvider";
 import { auth } from "@/lib/auth";
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 type TrackRowProps = {
   track: Track;
@@ -34,14 +40,6 @@ function formatPlays(plays: number) {
   return plays.toString();
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export default function TrackRow({
   track,
   index,
@@ -55,7 +53,7 @@ export default function TrackRow({
 
   const handleDownload = () => {
     if (!isPending && !session?.user) {
-      // Task 4: signed-out users are gated at the API layer (401); surface the
+      // Signed-out users are gated at the API layer (401); surface the
       // sign-in page instead of hitting that 401 directly.
       window.location.href = "/sign-in";
       return;
@@ -74,10 +72,16 @@ export default function TrackRow({
           play(track, queue);
         }
       }}
-      className={`group grid min-h-[82px] cursor-pointer grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-3 px-3 transition-colors sm:grid-cols-[44px_minmax(0,1fr)_120px_80px_90px] sm:gap-4 sm:px-4 ${
-        active ? "bg-brand/10" : "hover:bg-white/[0.035]"
-      }`}
+      className={`group grid min-h-[82px] cursor-pointer grid-cols-[30px_minmax(0,1fr)_44px] sm:grid-cols-[30px_minmax(0,1fr)_44px_120px_80px_90px] items-center gap-3 px-3 transition-colors sm:grid-cols-[30px_minmax(0,1fr)_44px_120px_80px_90px] sm:gap-4 sm:px-4 ${active ? "bg-brand/10" : "hover:bg-white/[0.035]"}`}
     >
+      {/* Rank */}
+      <div
+        aria-label={`Rank ${index + 1}`}
+        className="flex items-center justify-center font-mono text-2xl font-black text-white/10 sm:text-3xl"
+      >
+        {index + 1}
+      </div>
+
       {/* Play */}
       <button
         type="button"
@@ -85,14 +89,8 @@ export default function TrackRow({
           event.stopPropagation();
           play(track, queue);
         }}
-        aria-label={
-          playing ? `Pause ${track.title}` : `Play ${track.title}`
-        }
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${
-          playing
-            ? "bg-brand text-white"
-            : "text-muted hover:bg-brand hover:text-white"
-        }`}
+        aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${playing ? "bg-brand text-white" : "text-muted hover:bg-brand hover:text-white"}`}
       >
         {playing ? (
           <Pause className="h-4 w-4 fill-current" />
@@ -104,26 +102,18 @@ export default function TrackRow({
       {/* Artwork + song */}
       <div className="flex min-w-0 items-center gap-3">
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${track.gradient} shadow-lg`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br shadow-lg ${track.gradient}`}
         >
           <span className="text-sm font-bold text-white/90">
             {track.title.slice(0, 1).toUpperCase()}
           </span>
         </div>
-
         <div className="min-w-0">
-          {/* TITLE — clicking this plays the track */}
           <p
-            className={`truncate text-sm font-semibold transition ${
-              active
-                ? "text-brand"
-                : "text-white group-hover:text-brand"
-            }`}
+            className={`truncate text-sm font-semibold transition ${active ? "text-brand" : "text-white group-hover:text-brand"}`}
           >
             {track.title}
           </p>
-
-          {/* ARTIST — this is the only artist link */}
           <div className="mt-1 flex min-w-0 items-center gap-2">
             <Link
               href={`/artists/${slugify(track.artist)}`}
@@ -132,15 +122,12 @@ export default function TrackRow({
             >
               {track.artist}
             </Link>
-
             <span className="hidden shrink-0 text-[10px] text-muted/50 sm:inline">
               •
             </span>
-
             <span className="hidden shrink-0 text-[11px] text-muted sm:inline">
               {track.genre}
             </span>
-
             <span className="text-[11px] tabular-nums text-muted sm:hidden">
               • {formatDuration(track.durationSec)}
             </span>
@@ -171,7 +158,6 @@ export default function TrackRow({
         >
           <Download className="h-4 w-4" />
         </button>
-
         <button
           type="button"
           onClick={(event) => event.stopPropagation()}
@@ -180,7 +166,6 @@ export default function TrackRow({
         >
           <Heart className="h-4 w-4" />
         </button>
-
         <button
           type="button"
           onClick={(event) => event.stopPropagation()}

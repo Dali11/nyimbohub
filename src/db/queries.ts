@@ -1,5 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import { artists, tracks, videos } from "./schema";
 
@@ -24,6 +24,117 @@ export async function getMusicTracks() {
     })
     .from(tracks)
     .innerJoin(artists, eq(tracks.artistId, artists.id))
+    .orderBy(desc(tracks.plays));
+}
+
+// --- Specialized listing queries (cache tagged like the others) ---
+
+export async function getNewReleases() {
+  "use cache";
+  cacheTag("music:tracks");
+  cacheLife("minutes");
+
+  return db
+    .select({
+      id: tracks.id,
+      title: tracks.title,
+      artist: artists.name,
+      artistSlug: artists.slug,
+      genre: tracks.genre,
+      durationSec: tracks.durationSec,
+      plays: tracks.plays,
+      gradient: tracks.gradient,
+      audioKey: tracks.audioKey,
+      coverKey: tracks.coverKey,
+      createdAt: tracks.createdAt,
+    })
+    .from(tracks)
+    .innerJoin(artists, eq(tracks.artistId, artists.id))
+    .orderBy(desc(tracks.createdAt));
+}
+
+export async function getTrending() {
+  "use cache";
+  cacheTag("music:tracks");
+  cacheLife("minutes");
+
+  return db
+    .select({
+      id: tracks.id,
+      title: tracks.title,
+      artist: artists.name,
+      genre: tracks.genre,
+      durationSec: tracks.durationSec,
+      plays: tracks.plays,
+      gradient: tracks.gradient,
+      audioKey: tracks.audioKey,
+      coverKey: tracks.coverKey,
+    })
+    .from(tracks)
+    .innerJoin(artists, eq(tracks.artistId, artists.id))
+    .orderBy(desc(tracks.plays));
+}
+
+export async function getCharts() {
+  "use cache";
+  cacheTag("music:tracks");
+  cacheLife("minutes");
+
+  return db
+    .select({
+      id: tracks.id,
+      title: tracks.title,
+      artist: artists.name,
+      genre: tracks.genre,
+      durationSec: tracks.durationSec,
+      plays: tracks.plays,
+      gradient: tracks.gradient,
+      audioKey: tracks.audioKey,
+      coverKey: tracks.coverKey,
+    })
+    .from(tracks)
+    .innerJoin(artists, eq(tracks.artistId, artists.id))
+    .orderBy(desc(tracks.plays))
+    .limit(20);
+}
+
+export async function getGenres() {
+  "use cache";
+  cacheTag("music:tracks");
+  cacheLife("minutes");
+
+  const rows = await db
+    .select({
+      genre: tracks.genre,
+      count: sql`(select count(*)::int from tracks t2 where t2.genre = tracks.genre)`,
+    })
+    .from(tracks)
+    .groupBy(tracks.genre)
+    .orderBy(desc(tracks.genre));
+
+  return rows as { genre: string; count: number }[];
+}
+
+export async function getTracksByGenre(genre: string) {
+  "use cache";
+  cacheTag("music:tracks");
+  cacheLife("minutes");
+
+  return db
+    .select({
+      id: tracks.id,
+      title: tracks.title,
+      artist: artists.name,
+      genre: tracks.genre,
+      durationSec: tracks.durationSec,
+      plays: tracks.plays,
+      gradient: tracks.gradient,
+      audioKey: tracks.audioKey,
+      coverKey: tracks.coverKey,
+    })
+    .from(tracks)
+    .innerJoin(artists, eq(tracks.artistId, artists.id))
+    .where(eq(tracks.genre, genre))
     .orderBy(desc(tracks.plays));
 }
 
