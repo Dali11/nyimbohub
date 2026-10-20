@@ -1,4 +1,4 @@
-import { House, Music, Sparkles, Flame, TrendingUp, Tag } from "lucide-react";
+import { House, Music, Sparkles, Flame, TrendingUp, Tag, Heart } from "lucide-react";
 
 export type NavItemData = {
   href: string;
@@ -20,4 +20,6 @@ export const browse: NavItemData[] = [
   { href: "/genres", label: "Genres", icon: Tag },
 ];
 
-export const library: NavItemData[] = [];
+export const library: NavItemData[] = [
+  { href: "/library/liked", label: "Favourites", icon: Heart },
+];

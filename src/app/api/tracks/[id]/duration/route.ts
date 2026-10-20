@@ -46,12 +46,10 @@ export async function PATCH(
     );
   }
 
-  // Set-once: a track's duration can only be written when it is currently 0.
-  if (track.durationSec !== 0) {
-    return NextResponse.json({
-      success: true,
-      durationSec: track.durationSec,
-    });
+  // The initial R2 import used file-size estimates. Accept browser-measured
+  // media duration so existing incorrect values can be corrected too.
+  if (Math.abs(track.durationSec - durationSec) <= 1) {
+    return NextResponse.json({ success: true, durationSec: track.durationSec });
   }
 
   await db

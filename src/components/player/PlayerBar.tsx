@@ -5,11 +5,13 @@ import {
   Play,
   SkipBack,
   SkipForward,
+  Shuffle,
+  Repeat,
   Volume1,
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 import { usePlayer } from "./PlayerProvider";
 import { formatTime } from "@/lib/format";
 
@@ -29,15 +31,13 @@ export default function PlayerBar() {
     prev,
     seek,
     setVolume,
+    shuffle,
+    repeat,
+    toggleShuffle,
+    cycleRepeat,
   } = usePlayer();
 
-  const [previousVolume, setPreviousVolume] = useState(0.8);
-
-  useEffect(() => {
-    if (volume > 0) {
-      setPreviousVolume(volume);
-    }
-  }, [volume]);
+  const previousVolumeRef = useRef(0.8);
 
   if (!current) return null;
 
@@ -50,9 +50,9 @@ export default function PlayerBar() {
 
   function toggleMute() {
     if (muted) {
-      setVolume(previousVolume > 0 ? previousVolume : 0.8);
+      setVolume(previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.8);
     } else {
-      setPreviousVolume(volume);
+      previousVolumeRef.current = volume;
       setVolume(0);
     }
   }
@@ -69,25 +69,48 @@ export default function PlayerBar() {
             <div
               className={`relative size-14 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br ${current.gradient} shadow-lg`}
             >
-              <div className="absolute inset-0 bg-black/10" />
-              <div className="relative grid h-full place-items-center text-lg font-black text-white/80">
-                {current.title.slice(0, 1).toUpperCase()}
-              </div>
+              {current.coverUrl ? (
+                <img
+                  src={current.coverUrl}
+                  alt={`${current.title} cover`}
+                  width={56}
+                  height={56}
+                  loading="eager"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 grid place-items-center text-lg font-black text-white/80">
+                  {current.title.slice(0, 1).toUpperCase()}
+                </div>
+              )}
             </div>
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">
                 {current.title}
               </p>
-              <p className="mt-0.5 truncate text-xs text-muted">
-                {current.artist}
-              </p>
+              <div className="mt-0.5 flex min-w-0 items-center gap-2">
+                <p className="truncate text-xs text-muted">{current.artist}</p>
+                <span className={`sound-wave ${isPlaying ? "sound-wave--playing" : ""}`} aria-hidden="true">
+                  <span /> <span /> <span /> <span /> <span />
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Controls */}
           <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <button
+                type="button"
+                onClick={toggleShuffle}
+                aria-label={shuffle ? "Disable shuffle" : "Enable shuffle"}
+                aria-pressed={shuffle}
+                title={shuffle ? "Shuffle on" : "Shuffle off"}
+                className={`grid size-8 place-items-center rounded-full transition ${shuffle ? "bg-brand/15 text-brand" : "text-muted hover:bg-white/5 hover:text-white"}`}
+              >
+                <Shuffle className="size-4" />
+              </button>
               <button
                 type="button"
                 onClick={prev}
@@ -117,6 +140,17 @@ export default function PlayerBar() {
                 className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-white/5 hover:text-white"
               >
                 <SkipForward className="size-4 fill-current" />
+              </button>
+              <button
+                type="button"
+                onClick={cycleRepeat}
+                aria-label={`Repeat ${repeat}`}
+                aria-pressed={repeat !== "off"}
+                title={`Repeat ${repeat}`}
+                className={`relative grid size-8 place-items-center rounded-full transition ${repeat !== "off" ? "bg-brand/15 text-brand" : "text-muted hover:bg-white/5 hover:text-white"}`}
+              >
+                <Repeat className="size-4" />
+                {repeat === "one" && <span className="absolute -right-0.5 -top-0.5 text-[9px] font-bold">1</span>}
               </button>
             </div>
 
@@ -187,9 +221,20 @@ export default function PlayerBar() {
           <div
             className={`relative size-11 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br ${current.gradient}`}
           >
-            <div className="grid h-full place-items-center text-sm font-black text-white/80">
-              {current.title.slice(0, 1).toUpperCase()}
-            </div>
+            {current.coverUrl ? (
+              <img
+                src={current.coverUrl}
+                alt={`${current.title} cover`}
+                width={44}
+                height={44}
+                loading="eager"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="grid h-full place-items-center text-sm font-black text-white/80">
+                {current.title.slice(0, 1).toUpperCase()}
+              </div>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -197,9 +242,12 @@ export default function PlayerBar() {
               {current.title}
             </p>
 
-            <p className="truncate text-xs text-muted">
-              {current.artist}
-            </p>
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="truncate text-xs text-muted">{current.artist}</p>
+              <span className={`sound-wave ${isPlaying ? "sound-wave--playing" : ""}`} aria-hidden="true">
+                <span /> <span /> <span /> <span /> <span />
+              </span>
+            </div>
 
             <div className="mt-2 flex items-center gap-2">
               <span className="text-[10px] tabular-nums text-muted">
@@ -232,18 +280,51 @@ export default function PlayerBar() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={isPlaying ? "Pause" : "Play"}
-            className="grid size-11 shrink-0 place-items-center rounded-full bg-brand text-white shadow-lg shadow-brand/20 transition active:scale-95"
-          >
-            {isPlaying ? (
-              <Pause className="size-5 fill-current" />
-            ) : (
-              <Play className="ml-0.5 size-5 fill-current" />
-            )}
-          </button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              onClick={toggleShuffle}
+              aria-label={shuffle ? "Disable shuffle" : "Enable shuffle"}
+              aria-pressed={shuffle}
+              className={`grid size-8 place-items-center rounded-full ${shuffle ? "text-brand" : "text-muted"}`}
+            >
+              <Shuffle className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Previous track"
+              className="grid size-8 place-items-center rounded-full text-muted active:text-white"
+            >
+              <SkipBack className="size-4 fill-current" />
+            </button>
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={isPlaying ? "Pause" : "Play"}
+              className="grid size-10 place-items-center rounded-full bg-brand text-white shadow-lg shadow-brand/20 transition active:scale-95"
+            >
+              {isPlaying ? <Pause className="size-5 fill-current" /> : <Play className="ml-0.5 size-5 fill-current" />}
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Next track"
+              className="grid size-8 place-items-center rounded-full text-muted active:text-white"
+            >
+              <SkipForward className="size-4 fill-current" />
+            </button>
+            <button
+              type="button"
+              onClick={cycleRepeat}
+              aria-label={`Repeat ${repeat}`}
+              aria-pressed={repeat !== "off"}
+              className={`relative grid size-8 place-items-center rounded-full ${repeat !== "off" ? "text-brand" : "text-muted"}`}
+            >
+              <Repeat className="size-4" />
+              {repeat === "one" && <span className="absolute right-0 top-0 text-[9px] font-bold">1</span>}
+            </button>
+          </div>
         </div>
 
       </div>

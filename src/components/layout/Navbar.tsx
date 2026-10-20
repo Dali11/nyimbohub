@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { usePlayer } from "@/components/player/PlayerProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { User, LogOut, Menu, X, ChevronDown, Video } from "lucide-react";
 import { Music2, Search } from "lucide-react";
 import { browse, library, type NavItemData } from "./nav-items";
 import { auth } from "@/lib/auth";
-
-// Main five are the core browse links; the remainder live under "More".
-const mainLinks = browse.slice(0, 5);
-const moreLinks = browse.slice(5);
 
 // Mobile menu = the sidebar links plus Videos (which the sidebar doesn't list)
 const mobileBrowse: NavItemData[] = [
@@ -23,6 +20,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { data: session } = auth.useSession();
+  const { current, isPlaying } = usePlayer();
   const user = session?.user;
 
   const isActive = (href: string) =>
@@ -32,8 +30,8 @@ export default function Navbar() {
     <Link
       href={href}
       onClick={() => setOpen(false)}
-      className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-        isActive(href) ? "bg-brand/15 text-brand" : "text-muted"
+      className={`flex min-w-0 items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-sm transition-colors ${
+        isActive(href) ? "border-brand/20 bg-brand/10 text-brand" : "text-muted hover:border-line hover:bg-surface hover:text-white"
       }`}
     >
       <Icon className="size-4" />
@@ -43,74 +41,37 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line/60 bg-bg/80 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+      <div className="mx-auto flex h-16 max-w-none items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8">
+        <Link href="/" className="mr-2 flex flex-shrink-0 items-center gap-2 lg:mr-6">
           <Music2 className="size-7 text-brand" />
-          <span className="text-xl font-bold tracking-tight">
+          <span className="text-lg font-bold tracking-tight sm:text-xl">
             Nyimbo<span className="text-brand">Hub</span>
           </span>
         </Link>
 
-        {/* Browse links (main five) + "More" for the rest */}
-        <div className="flex flex-1 items-center gap-3 py-2 pl-4">
-          {mainLinks.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              aria-current={isActive(l.href) ? "page" : undefined}
-              className={`flex min-w-0 items-center gap-2 whitespace-nowrap px-3 py-3 text-sm transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
-                isActive(l.href)
-                  ? "bg-brand/10 text-brand"
-                  : "text-muted hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {l.icon && <l.icon className="size-4 shrink-0" />}
-              <span className="truncate">{l.label}</span>
-              {isActive(l.href) && (
-                <span className="ml-auto h-0.5 flex-1 rounded bg-brand" />
-              )}
-            </Link>
-          ))}
-          {moreLinks.length > 0 && (
-            <div className="relative">
-              <button
-                className="flex min-w-0 items-center gap-2 whitespace-nowrap px-3 py-3 text-sm text-muted transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 rounded-lg"
-                aria-label="More"
-                aria-expanded={open}
-                onClick={() => setOpen((o) => !o)}
-              >
-                More
-                <ChevronDown
-                  className={`size-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-                />
-              </button>
-              {open && (
-                <div className="absolute right-0 top-full mt-2 min-w-[96px] rounded-lg border border-line bg-surface p-2 shadow-lg">
-                  {moreLinks.map((l) => (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center whitespace-nowrap px-3 py-2 text-sm text-muted transition-colors hover:bg-white/5 hover:text-white rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-                    >
-                      {l.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Search (shrinks) + auth buttons */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="relative min-w-0 flex-[1_0_0] max-w-xs">
+        {/* Search, live equalizer, and account actions */}
+        <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
+          <div className="relative min-w-0 w-[28%] max-w-sm shrink-0">
             <Search className="size-4 shrink-0 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input
               className="w-full border border-line bg-surface py-3 pl-8 pr-3 text-sm outline-none placeholder:text-muted focus:border-brand/40 transition-colors"
               placeholder="Search songs, artists..."
             />
           </div>
+          {current && (
+            <div
+              className="ml-1 flex min-w-0 flex-1 items-center gap-1 px-1 py-2"
+              title={`${isPlaying ? "Playing" : "Paused"}: ${current.title} — ${current.artist}`}
+              aria-label={`${isPlaying ? "Playing" : "Paused"}: ${current.title} by ${current.artist}`}
+            >
+              <span className={`sound-wave sound-wave--header ${isPlaying ? "sound-wave--playing" : ""}`} aria-hidden="true">
+                {Array.from({ length: 48 }, (_, index) => <span key={index} />)}
+              </span>
+              <span className="shrink-0 truncate text-xs font-medium text-muted">{current.title}</span>
+              <span className={`size-1.5 shrink-0 rounded-full ${isPlaying ? "bg-brand" : "bg-muted"}`} aria-hidden="true" />
+            </div>
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-3">
           {user ? (
             <>
               <div className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-muted">
@@ -146,10 +107,11 @@ export default function Navbar() {
               </Link>
             </>
           )}
+          </div>
         </div>
 
         <button
-          className="flex items-center justify-center rounded-lg p-2 text-muted transition-colors hover:text-white hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 lg:hidden"
+          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface/70 p-2 text-muted transition-colors hover:border-brand/40 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 lg:hidden"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
@@ -160,8 +122,8 @@ export default function Navbar() {
 
       {/* Mobile / tablet menu */}
       {open && (
-        <div className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-line bg-bg px-4 pb-6 pt-3 lg:hidden">
-          <div className="mb-3 flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-3 text-sm text-muted">
+        <div className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-line bg-bg/98 px-4 pb-6 pt-3 shadow-2xl shadow-black/30 backdrop-blur-xl lg:hidden">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
             <Search className="size-4 shrink-0" />
             <input
               placeholder="Search songs, artists..."
@@ -194,7 +156,7 @@ export default function Navbar() {
             </div>
           )}
 
-          <nav className="flex flex-col">
+          <nav className="grid grid-cols-2 gap-1.5">
             {mobileBrowse.map((i) => (
               <MobileLink key={i.href} {...i} />
             ))}
@@ -203,7 +165,7 @@ export default function Navbar() {
           <h3 className="mb-1 mt-5 px-3 text-xs font-semibold uppercase tracking-wide text-muted">
             Your Library
           </h3>
-          <nav className="flex flex-col">
+          <nav className="grid grid-cols-2 gap-1.5">
             {library.map((i) => (
               <MobileLink key={i.href} {...i} />
             ))}

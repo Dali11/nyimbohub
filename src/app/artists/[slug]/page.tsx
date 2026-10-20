@@ -89,13 +89,31 @@ export default async function ArtistPage({ params }: Props) {
           <div className="min-w-0 flex-1">
             <h1 className="flex items-center gap-2 text-3xl font-bold">
               {artist.name}
-              {artist.verified && <BadgeCheck className="size-6 text-brand" />}
+              {artist.verified && (
+                <>
+                  <BadgeCheck className="size-6 text-brand" />
+                  <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-semibold text-brand">
+                    Verified
+                  </span>
+                </>
+              )}
             </h1>
             <p className="text-sm text-muted">Artist • {artist.location}</p>
+            {songs.length > 0 && (
+              <p className="mt-1 text-xs text-muted">
+                Available music · {songs.length} {songs.length === 1 ? "song" : "songs"}
+              </p>
+            )}
           </div>
 
           <ArtistActions name={artist.name} />
         </div>
+
+        {artist.bio && (
+          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/90">
+            {artist.bio}
+          </p>
+        )}
 
         <div className="mt-6 flex gap-8">
           {stats.map((s) => (

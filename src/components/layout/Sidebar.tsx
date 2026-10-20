@@ -24,7 +24,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-56 shrink-0 overflow-y-auto py-6 lg:block">
+    <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] w-56 shrink-0 self-start overscroll-contain py-6 lg:block">
       <nav className="space-y-1">
         {browse.map((i) => (
           <NavItem

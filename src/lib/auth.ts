@@ -1,12 +1,16 @@
 import { createAuthClient } from "@neondatabase/auth";
 import { BetterAuthReactAdapter } from "@neondatabase/auth/react/adapters";
 
-const authUrl = process.env.NEON_AUTH_URL;
+// Neon Auth's client requires an absolute URL. In the browser, use the
+// current origin so local, preview, and production deployments use their own
+// same-origin auth proxy. The server-side fallback is only for module setup.
+const appOrigin =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-if (!authUrl) {
-  throw new Error("NEON_AUTH_URL is not configured");
-}
+const authBaseUrl = new URL("/api/auth", appOrigin).toString();
 
-export const auth = createAuthClient(authUrl, {
+export const auth = createAuthClient(authBaseUrl, {
   adapter: BetterAuthReactAdapter(),
 });

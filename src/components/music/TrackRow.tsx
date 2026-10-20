@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Heart, MoreHorizontal, Pause, Play } from "lucide-react";
+import { Check, Download, Heart, Link2, MoreHorizontal, Pause, Play, Share2 } from "lucide-react";
 import type { Track } from "@/lib/types";
 import { usePlayer } from "@/components/player/PlayerProvider";
+import { useEffect, useRef, useState } from "react";
 import { auth } from "@/lib/auth";
 import Cover from "@/components/music/Cover";
 
@@ -19,10 +20,12 @@ type TrackRowProps = {
   track: Track;
   index: number;
   queue: Track[];
+  isFavorite?: boolean;
+  onToggleFavorite?: (trackId: string) => void | Promise<void>;
 };
 
 export const trackGrid =
-  "divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface";
+  "divide-y divide-line/70 overflow-hidden rounded-2xl border border-line/80 bg-surface/65 shadow-xl shadow-black/10";
 
 function formatDuration(seconds: number) {
   const mins = Math.floor(seconds / 60);
@@ -47,12 +50,84 @@ export default function TrackRow({
   track,
   index,
   queue,
+  isFavorite,
+  onToggleFavorite,
 }: TrackRowProps) {
   const { current, isPlaying, play } = usePlayer();
   const { data: session, isPending } = auth.useSession();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [localFavorite, setLocalFavorite] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
+
+  const favorite = isFavorite ?? localFavorite;
   const active = current?.id === track.id;
   const playing = active && isPlaying;
+
+  const handleFavoriteClick = async () => {
+    if (onToggleFavorite) {
+      await onToggleFavorite(track.id);
+      return;
+    }
+    const removing = favorite;
+    const response = await fetch("/api/favorites", {
+      method: removing ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackId: track.id }),
+    });
+    if (response.status === 401) {
+      window.location.href = "/sign-in";
+      return;
+    }
+    if (response.ok) setLocalFavorite(!removing);
+  };
+
+  const trackUrl = () => `${window.location.origin}/music?track=${encodeURIComponent(track.id)}`;
+
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(trackUrl());
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      window.prompt("Copy this track link", trackUrl());
+    }
+    setMenuOpen(false);
+  };
+
+  const handleShare = async () => {
+    const url = trackUrl();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${track.title} — ${track.artist}`, url });
+      } catch {
+        // The user may cancel the native share sheet; no action is needed.
+      }
+    } else {
+      await handleCopyLink();
+      return;
+    }
+    setMenuOpen(false);
+  };
 
   const handleDownload = () => {
     if (!isPending && !session?.user) {
@@ -66,6 +141,7 @@ export default function TrackRow({
 
   return (
     <div
+      id={`track-${track.id}`}
       role="button"
       tabIndex={0}
       onClick={() => play(track, queue)}
@@ -75,39 +151,33 @@ export default function TrackRow({
           play(track, queue);
         }
       }}
-      className={`group grid min-h-[82px] cursor-pointer grid-cols-[30px_minmax(0,1fr)_44px] sm:grid-cols-[30px_minmax(0,1fr)_44px_120px_80px_90px] items-center gap-3 px-3 transition-colors sm:grid-cols-[30px_minmax(0,1fr)_44px_120px_80px_90px] sm:gap-4 sm:px-4 ${active ? "bg-brand/10" : "hover:bg-white/[0.035]"}`}
+      className={`group relative grid min-h-[84px] cursor-pointer grid-cols-[34px_minmax(0,1fr)_92px] items-center gap-3 px-3 transition-colors duration-200 sm:min-h-[88px] sm:grid-cols-[40px_minmax(0,1fr)_90px_76px_112px] sm:gap-4 sm:px-4 ${active ? "bg-brand/[0.09]" : "hover:bg-white/[0.035]"}`}
     >
       {/* Rank */}
       <div
         aria-label={`Rank ${index + 1}`}
-        className="flex items-center justify-center font-mono text-2xl font-black text-white/10 sm:text-3xl"
+        className={`flex items-center justify-center font-mono text-2xl font-black transition-colors sm:text-3xl ${active ? "text-brand/80" : "text-white/15 group-hover:text-white/45"}`}
       >
         {index + 1}
       </div>
 
-      {/* Play */}
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          play(track, queue);
-        }}
-        aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${playing ? "bg-brand text-white" : "text-muted hover:bg-brand hover:text-white"}`}
-      >
-        {playing ? (
-          <Pause className="h-4 w-4 fill-current" />
-        ) : (
-          <Play className="h-4 w-4 fill-current" />
-        )}
-      </button>
-
-      {/* Artwork + song */}
-      <div className="flex min-w-0 items-center gap-3">
+      {/* Track identity: play control, artwork and metadata stay aligned. */}
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            play(track, queue);
+          }}
+          aria-label={playing ? `Pause ${track.title}` : `Play ${track.title}`}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition sm:h-10 sm:w-10 ${playing ? "bg-brand text-white shadow-md shadow-brand/20" : "bg-white/[0.035] text-muted group-hover:bg-brand group-hover:text-white"}`}
+        >
+          {playing ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+        </button>
         <Cover track={track} variant="md" />
         <div className="min-w-0">
           <p
-            className={`truncate text-sm font-semibold transition ${active ? "text-brand" : "text-white group-hover:text-brand"}`}
+            className={`truncate text-sm font-semibold transition sm:text-[15px] ${active ? "text-brand" : "text-white group-hover:text-brand"}`}
           >
             {track.title}
           </p>
@@ -125,8 +195,8 @@ export default function TrackRow({
             <span className="hidden shrink-0 text-[11px] text-muted sm:inline">
               {track.genre}
             </span>
-            <span className="text-[11px] tabular-nums text-muted sm:hidden">
-              • {formatDuration(track.durationSec)}
+            <span className="inline-flex shrink-0 items-center gap-1 text-[11px] tabular-nums text-muted sm:hidden">
+              <span aria-hidden="true">·</span> {formatDuration(track.durationSec)}
             </span>
           </div>
         </div>
@@ -151,26 +221,49 @@ export default function TrackRow({
             handleDownload();
           }}
           aria-label={`Download ${track.title}`}
-          className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-white/5 hover:text-white"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-brand/10 hover:text-brand sm:h-10 sm:w-10"
         >
           <Download className="h-4 w-4" />
         </button>
         <button
           type="button"
-          onClick={(event) => event.stopPropagation()}
-          aria-label={`Like ${track.title}`}
-          className="hidden h-10 w-10 items-center justify-center rounded-full text-muted transition hover:bg-white/5 hover:text-white sm:flex"
+          onClick={(event) => {
+            event.stopPropagation();
+            void handleFavoriteClick();
+          }}
+          aria-label={favorite ? `Remove ${track.title} from favourites` : `Add ${track.title} to favourites`}
+          aria-pressed={favorite}
+          title={favorite ? "Remove from favourites" : "Save to your account favourites"}
+          className={`hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-brand/10 hover:text-brand sm:flex ${favorite ? "text-brand" : "text-muted"}`}
         >
-          <Heart className="h-4 w-4" />
+          <Heart className={`h-4 w-4 ${favorite ? "fill-current" : ""}`} />
         </button>
-        <button
-          type="button"
-          onClick={(event) => event.stopPropagation()}
-          aria-label={`More options for ${track.title}`}
-          className="hidden h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-white/5 hover:text-white sm:flex"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
+        <div ref={menuRef} className="relative hidden sm:block" onClick={(event) => event.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={`More options for ${track.title}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/5 hover:text-white ${menuOpen ? "bg-white/10 text-white" : "text-muted"}`}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+          {menuOpen && (
+            <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-2xl shadow-black/40">
+              <button type="button" role="menuitem" onClick={handleCopyLink} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs text-white transition hover:bg-white/5">
+                {copied ? <Check className="size-4 text-emerald-400" /> : <Link2 className="size-4 text-muted" />}
+                {copied ? "Link copied" : "Copy track link"}
+              </button>
+              <button type="button" role="menuitem" onClick={handleShare} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs text-white transition hover:bg-white/5">
+                <Share2 className="size-4 text-muted" /> Share track
+              </button>
+              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); handleDownload(); }} className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs text-white transition hover:bg-white/5">
+                <Download className="size-4 text-muted" /> Download audio
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

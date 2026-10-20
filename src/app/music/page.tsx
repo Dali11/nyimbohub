@@ -12,6 +12,7 @@ export default async function MusicPage() {
     genre: track.genre,
     durationSec: track.durationSec,
     plays: track.plays,
+    createdAt: track.createdAt.getTime(),
     gradient: track.gradient,
     coverUrl: track.coverKey ? `/api/media/cover/${track.id}` : undefined,
     audioUrl: track.audioKey

@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  primaryKey,
   pgTable,
   text,
   timestamp,
@@ -43,6 +44,23 @@ export const tracks = pgTable(
   (t) => [index("tracks_artist_idx").on(t.artistId)],
 );
 
+
+
+export const favorites = pgTable(
+  "favorites",
+  {
+    userId: text("user_id").notNull(),
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.trackId] }),
+    index("favorites_user_idx").on(t.userId),
+  ],
+);
+
 export const videos = pgTable(
   "videos",
   {
@@ -68,4 +86,5 @@ export const videos = pgTable(
 
 export type Artist = typeof artists.$inferSelect;
 export type Track = typeof tracks.$inferSelect;
+export type Favorite = typeof favorites.$inferSelect;
 export type Video = typeof videos.$inferSelect;

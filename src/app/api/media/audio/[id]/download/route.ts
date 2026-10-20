@@ -3,9 +3,8 @@ import { NextResponse } from "next/server";
 import "server-only";
 import { db } from "@/db";
 import { tracks } from "@/db/schema";
-import { r2 } from "@/lib/r2";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { auth } from "@/lib/auth";
+import { getR2Object } from "@/lib/r2";
+import { authServer } from "@/lib/auth-server";
 
 function safeFilename(value: string) {
   return value
@@ -24,8 +23,8 @@ export async function GET(
   const { id } = await params;
 
   // Require a signed-in user for the download step.
-  const session = await auth.getSession();
-  if (!session?.data?.session?.token || !session?.data?.user) {
+  const session = await authServer.getSession();
+  if (!session?.data?.user?.id) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 },
@@ -48,12 +47,7 @@ export async function GET(
     );
   }
 
-  const object = await r2.send(
-    new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET!,
-      Key: track.audioKey,
-    }),
-  );
+  const object = await getR2Object(track.audioKey);
 
   if (!object.Body) {
     return NextResponse.json(
