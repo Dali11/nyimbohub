@@ -1,10 +1,13 @@
 import { getVideos } from "@/db/queries";
 import VideoBrowser from "@/components/videos/VideoBrowser";
 import { formatAgo, formatTime } from "@/lib/format";
+import { connection } from "next/server";
 
 export const metadata = { title: "Music Videos — NyimboHub" };
 
 export default async function VideosPage() {
+  // Relative timestamps depend on the current time, so render this page at request time.
+  await connection();
   const rows = await getVideos();
 
   const videos = rows.map((v) => ({
