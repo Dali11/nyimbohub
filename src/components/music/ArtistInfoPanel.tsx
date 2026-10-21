@@ -25,21 +25,18 @@ function compactNumber(value: number) {
 export default function ArtistInfoPanel() {
   const { current } = usePlayer();
   const track = current as PlayingTrack | null;
-  const [artist, setArtist] = useState<ArtistInfo | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [artistResult, setArtistResult] = useState<{ slug: string; data: ArtistInfo | null } | null>(null);
+  const artist = artistResult && artistResult.slug === track?.artistSlug ? artistResult.data : null;
+  const loading = Boolean(track?.artistSlug && artistResult?.slug !== track?.artistSlug);
 
   useEffect(() => {
-    if (!track?.artistSlug) {
-      setArtist(null);
-      return;
-    }
+    if (!track?.artistSlug) return;
+    const slug = track.artistSlug;
     let cancelled = false;
-    setLoading(true);
     fetch(`/api/artists/${encodeURIComponent(track.artistSlug)}`)
       .then(async (response) => response.ok ? response.json() as Promise<ArtistInfo> : null)
-      .then((data) => { if (!cancelled) setArtist(data); })
-      .catch(() => { if (!cancelled) setArtist(null); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .then((data) => { if (!cancelled) setArtistResult({ slug, data }); })
+      .catch(() => { if (!cancelled) setArtistResult({ slug, data: null }); });
     return () => { cancelled = true; };
   }, [track?.artistSlug]);
 

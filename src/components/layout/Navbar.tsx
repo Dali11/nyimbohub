@@ -4,22 +4,18 @@ import { useState } from "react";
 import { usePlayer } from "@/components/player/PlayerProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, LogOut, Menu, X, ChevronDown, Video } from "lucide-react";
+import { User, LogOut, Menu, X } from "lucide-react";
 import { Music2, Search } from "lucide-react";
 import { browse, library, type NavItemData } from "./nav-items";
-import { auth } from "@/lib/auth";
+import { authClient } from "@/lib/auth-client";
 
-// Mobile menu = the sidebar links plus Videos (which the sidebar doesn't list)
-const mobileBrowse: NavItemData[] = [
-  ...browse.slice(0, 2),
-  { href: "/videos", label: "Videos", icon: Video },
-  ...browse.slice(2),
-];
+// Mobile menu follows the shared browse navigation.
+const mobileBrowse: NavItemData[] = [...browse];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const { data: session } = auth.useSession();
+  const { data: session } = authClient.useSession();
   const { current, isPlaying } = usePlayer();
   const user = session?.user;
 
@@ -82,7 +78,7 @@ export default function Navbar() {
               </div>
               <button
                 onClick={() => {
-                  void auth.signOut();
+                  void authClient.signOut();
                 }}
                 className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-line px-3 py-3 text-sm text-muted hover:bg-surface transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
                 aria-label="Sign out"
@@ -175,7 +171,7 @@ export default function Navbar() {
             {user ? (
               <button
                 onClick={() => {
-                  void auth.signOut();
+                  void authClient.signOut();
                 }}
                 className="flex items-center gap-2 w-full whitespace-nowrap rounded-lg border border-line px-3 py-3 text-sm text-muted transition-colors hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
                 aria-label="Sign out"

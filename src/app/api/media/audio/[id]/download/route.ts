@@ -4,7 +4,7 @@ import "server-only";
 import { db } from "@/db";
 import { tracks } from "@/db/schema";
 import { getR2Object } from "@/lib/r2";
-import { authServer } from "@/lib/auth-server";
+import { getServerSession } from "@/lib/auth-server";
 
 function safeFilename(value: string) {
   return value
@@ -23,8 +23,8 @@ export async function GET(
   const { id } = await params;
 
   // Require a signed-in user for the download step.
-  const session = await authServer.getSession();
-  if (!session?.data?.user?.id) {
+  const session = await getServerSession();
+  if (!session?.user?.id) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 },

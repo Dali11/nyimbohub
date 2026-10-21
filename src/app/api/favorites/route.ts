@@ -3,13 +3,13 @@ import { NextResponse } from "next/server";
 import "server-only";
 import { db } from "@/db";
 import { artists, favorites, tracks } from "@/db/schema";
-import { authServer } from "@/lib/auth-server";
+import { getServerSession } from "@/lib/auth-server";
 
 async function getUserId() {
   // Route handlers must use the server auth client so it reads the incoming
   // request cookies instead of the browser-oriented client session cache.
-  const result = await authServer.getSession();
-  return result?.data?.user?.id ?? null;
+  const result = await getServerSession();
+  return result?.user?.id ?? null;
 }
 
 export async function GET() {

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, Music, Video, Users, TrendingUp } from "lucide-react";
+import { House, Music, Users, TrendingUp, Heart } from "lucide-react";
 
-// Main sections. "Library" had no data model, so it is replaced by Top Charts.
+// Main sections. Videos are temporarily unavailable; use this space for Favourites.
 const tabs = [
   { href: "/", label: "Home", icon: House },
   { href: "/music", label: "Music", icon: Music },
-  { href: "/videos", label: "Videos", icon: Video },
+  { href: "/library/liked", label: "Favourites", icon: Heart },
   { href: "/artists", label: "Artists", icon: Users },
   { href: "/charts", label: "Top Charts", icon: TrendingUp },
 ];

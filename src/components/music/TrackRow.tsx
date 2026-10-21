@@ -5,7 +5,7 @@ import { Check, Download, Heart, Link2, MoreHorizontal, Pause, Play, Share2 } fr
 import type { Track } from "@/lib/types";
 import { usePlayer } from "@/components/player/PlayerProvider";
 import { useEffect, useRef, useState } from "react";
-import { auth } from "@/lib/auth";
+import { authClient } from "@/lib/auth-client";
 import Cover from "@/components/music/Cover";
 
 function slugify(value: string) {
@@ -54,7 +54,7 @@ export default function TrackRow({
   onToggleFavorite,
 }: TrackRowProps) {
   const { current, isPlaying, play } = usePlayer();
-  const { data: session, isPending } = auth.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [localFavorite, setLocalFavorite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -234,7 +234,7 @@ export default function TrackRow({
           aria-label={favorite ? `Remove ${track.title} from favourites` : `Add ${track.title} to favourites`}
           aria-pressed={favorite}
           title={favorite ? "Remove from favourites" : "Save to your account favourites"}
-          className={`hidden h-10 w-10 items-center justify-center rounded-full transition hover:bg-brand/10 hover:text-brand sm:flex ${favorite ? "text-brand" : "text-muted"}`}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition hover:bg-brand/10 hover:text-brand sm:h-10 sm:w-10 ${favorite ? "text-brand" : "text-muted"}`}
         >
           <Heart className={`h-4 w-4 ${favorite ? "fill-current" : ""}`} />
         </button>
